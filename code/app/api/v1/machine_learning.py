@@ -4,12 +4,12 @@ from fastapi import Depends, APIRouter, HTTPException
 
 import methods
 import schema.prediction
+
 from starlette import status
 
 from definitions import MODEL_DIR
 
-from transformers import T5Tokenizer, T5ForConditionalGeneration
-
+from transformers import MarianTokenizer, MarianMTModel
 
 router = APIRouter()
 
@@ -19,46 +19,46 @@ STAGE = config("STAGE")
 
 # load model only once:
 
+models = {}
+tokenizers = {}
+
 if STAGE == "PROD":
     device = torch.device('cuda')
-    model = T5ForConditionalGeneration.from_pretrained('t5-large').to(device)
-    tokenizer = T5Tokenizer.from_pretrained('t5-large')
+    models[schema.prediction.FunctionEnum.translation_de_en] = MarianMTModel.from_pretrained('Helsinki-NLP/opus-mt-de-en').to(device)
+    models[schema.prediction.FunctionEnum.translation_fr_en] = MarianMTModel.from_pretrained('Helsinki-NLP/opus-mt-fr-en').to(device)
 else:
-    model = T5ForConditionalGeneration.from_pretrained('t5-small')
-    tokenizer = T5Tokenizer.from_pretrained('t5-small')
+    models[schema.prediction.FunctionEnum.translation_de_en] = MarianMTModel.from_pretrained('Helsinki-NLP/opus-mt-de-en')
+    models[schema.prediction.FunctionEnum.translation_fr_en] = MarianMTModel.from_pretrained('Helsinki-NLP/opus-mt-fr-en')
+
+tokenizers[schema.prediction.FunctionEnum.translation_de_en] = MarianTokenizer.from_pretrained('Helsinki-NLP/opus-mt-de-en')
+tokenizers[schema.prediction.FunctionEnum.translation_fr_en] = MarianTokenizer.from_pretrained('Helsinki-NLP/opus-mt-fr-en')
+
 
 @router.post("/predict", response_model=schema.prediction.PredictionOutput,
              dependencies=[Depends(methods.api_key_authentication)])
 async def predict(data: schema.prediction.PredictionInput):
 
-    #TODO: Add validator to schema
-    model_function = "summarize"
-    if data.function == "summarization":
-        model_function = "summarize"
-    elif data.function == "translation_en_to_de":
-        model_function = "translate English to German"
-    elif data.function == "translation_en_to_fr":
-        model_function = "translate English to French"
+    model_function = data.function
+
+    print(model_function)
+
+    model = models[model_function]
+    tokenizer = tokenizers[model_function]
 
     preprocess_text = data.input.strip().replace("\n", "")
-    t5_prepared_text = model_function + ": " + preprocess_text
+    opus_prepared_text = [preprocess_text]
 
     if STAGE == "PROD":
-        tokenized_text = tokenizer.encode(t5_prepared_text, return_tensors="pt").to(device)
+        batch = tokenizer(opus_prepared_text, return_tensors="pt").to(device)
     else:
-        tokenized_text = tokenizer.encode(t5_prepared_text, return_tensors="pt")
+        batch = tokenizer(opus_prepared_text, return_tensors="pt")
 
-    input_ids = model.generate(tokenized_text,
-                               num_beams=10,
-                               min_length=30,
-                               max_length=100
-                               )
-
-    output = tokenizer.decode(input_ids[0], skip_special_tokens=True)
+    generator = model.generate(**batch)
+    translated = tokenizer.batch_decode(generator, skip_special_tokens=True)
 
     return {
-        "prediction": output,
-        "function": data.function
+        "prediction": translated,
+        "function": model_function
     }
 
 
