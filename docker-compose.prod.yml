@@ -16,7 +16,7 @@ services:
           devices:
             - capabilities: [ gpu ]
     ports:
-      - "8009:80"
+      - "8011:80"
     networks:
       - traefik-net
     command: [ "uvicorn", "main:app", "--host", "0.0.0.0", "--debug", "--port", "80", "--reload-dir", "/app" ]

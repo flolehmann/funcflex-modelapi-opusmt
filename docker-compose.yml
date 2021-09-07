@@ -8,7 +8,7 @@ services:
     image: study-align-model-opus-mt
     build: code
     ports:
-      - "8009:80"
+      - "8011:80"
     networks:
       - study-align-model-network
     command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--debug", "--port", "80", "--reload-dir", "/app"]
