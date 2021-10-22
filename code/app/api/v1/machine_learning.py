@@ -57,7 +57,7 @@ async def predict(data: schema.prediction.PredictionInput):
     translated = tokenizer.batch_decode(generator, skip_special_tokens=True)
 
     return {
-        "prediction": translated,
+        "prediction": translated[0],
         "function": model_function
     }
 
