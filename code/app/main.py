@@ -5,11 +5,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.v1 import machine_learning
 
 #logging.config.fileConfig("logging.conf", disable_existing_loggers=False)
-#logger = logging.getLogger('study-predictor')
+#logger = logging.getLogger('model-api')
 
 API_PREFIX = "/api/v1"
 
-app = FastAPI(title="study-align-prediction-api", version="1")
+app = FastAPI(title="model-api-opusmt", version="1")
 
 origins = [
     "http://localhost:3000",

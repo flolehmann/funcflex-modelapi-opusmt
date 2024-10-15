@@ -7,5 +7,5 @@ RUN pip install -r /app/requirements.txt
 COPY ./app /app
 
 # setup python logging environment
-RUN mkdir /var/log/study-predictor
+RUN mkdir /var/log/model-api
 RUN cat >log.log

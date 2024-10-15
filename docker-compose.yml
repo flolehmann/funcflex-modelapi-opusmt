@@ -1,21 +1,21 @@
 version: '3.7'
 networks:
-  study-align-model-network:
+  model-api-network:
     driver: bridge
 services:
-  study-align-model-opus-mt:
-    container_name: study-align-model-opus-mt
-    image: study-align-model-opus-mt
+  model-api-opusmt:
+    container_name: model-api-opusmt
+    image: model-api-opusmt
     build: code
     ports:
       - "8011:80"
     networks:
-      - study-align-model-network
+      - model-api-network
     command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--debug", "--port", "80", "--reload-dir", "/app"]
     volumes:
       - ./code/app:/app
   nginx:
-    container_name: study-align-model-opus-mt-nginx
+    container_name: model-api-opusmt-nginx
     image: nginx:1.19.0-alpine
     volumes:
       - ./loadbalancer/nginx.conf:/etc/nginx/conf.d/default.conf 
@@ -26,7 +26,7 @@ services:
       - 8090:8080
     #  - 444:443
     depends_on:
-      - study-align-model-opus-mt
+      - model-api-opusmt
     networks:
-      - study-align-model-network
+      - model-api-network
     
